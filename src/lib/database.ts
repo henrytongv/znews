@@ -17,11 +17,9 @@ if (!process.env.POSTGRES_URL && !process.env.DATABASE_URL) {
  * Check if articles have been synced today
  */
 export async function isSyncedToday(): Promise<boolean> {
-  const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
-
   const result = await sql`
     SELECT sync_date FROM sync_log
-    WHERE sync_date = ${today} AND status = 'success'
+    WHERE sync_date = CURRENT_DATE AND status = 'success'
   `
 
   return result.rows.length > 0
@@ -35,11 +33,9 @@ export async function insertSyncLog(
   status: 'success' | 'failed',
   errorMessage?: string
 ) {
-  const today = new Date().toISOString().split('T')[0]
-
   await sql`
     INSERT INTO sync_log (sync_date, articles_count, status, error_message)
-    VALUES (${today}, ${articlesCount}, ${status}, ${errorMessage || null})
+    VALUES (CURRENT_DATE, ${articlesCount}, ${status}, ${errorMessage || null})
     ON CONFLICT (sync_date)
     DO UPDATE SET
       articles_count = ${articlesCount},
@@ -108,7 +104,6 @@ export async function getArticles(
     ORDER BY pub_date DESC
     LIMIT ${limit} OFFSET ${offset}
   `
-
   return result.rows as NewsArticle[]
 }
 
