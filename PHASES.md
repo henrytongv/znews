@@ -52,7 +52,7 @@ Two primary features focused on user experience and performance optimization.
 
 ---
 
-### 2. 🗄️ Database Integration with Daily API Sync
+### 2. 🗄️ Database Integration with Lazy Daily Sync
 
 **Description**: Store articles in database and fetch from newsdata.io only once per day
 
@@ -61,41 +61,63 @@ Two primary features focused on user experience and performance optimization.
 #### Database Setup
 - Use Vercel Postgres or Supabase
 - Create `articles` table with full article schema
-- Create `sync_log` table to track daily fetches
-- Indexes on pub_date and fetched_at
+- Create `sync_log` table to track daily fetches (simple flag table):
+  ```sql
+  CREATE TABLE sync_log (
+    sync_date DATE PRIMARY KEY,
+    articles_count INTEGER,
+    status VARCHAR(50),
+    synced_at TIMESTAMP DEFAULT NOW()
+  );
+  ```
+- Indexes on pub_date for articles table
 
-#### Sync Strategy
-- Cron job runs once daily (e.g., 6 AM UTC)
-- Check if sync already happened today
-- If not synced: fetch from newsdata.io and store in DB
-- If synced: skip API call
-- Always serve data from database
+#### Lazy Sync Strategy (No Cron Job Required)
+On each request to `/api/news`:
+1. Check `sync_log` for today's date
+2. **If flag NOT present for today**:
+   - Fetch articles from newsdata.io API
+   - Store articles in `articles` table
+   - Insert flag in `sync_log` with today's date
+   - Return articles from database
+3. **If flag exists for today**:
+   - Skip API call
+   - Return articles directly from database
+
+This is a "lazy sync" - first request of the day triggers the fetch.
 
 #### API Changes
-- `src/app/api/news/route.ts` - Query database instead of external API
-- `src/app/api/news/[id]/route.ts` - Query database for single article
-- `src/app/api/sync/route.ts` - New cron endpoint for daily sync
+- `src/app/api/news/route.ts`:
+  - Check sync_log for today's date flag
+  - If no flag: fetch from newsdata.io, store in DB, set flag
+  - If flag exists: query database only
+  - Return articles from database
+
+- `src/app/api/news/[id]/route.ts`:
+  - Query database for single article
+  - No external API calls needed
 
 #### Environment Variables
 ```env
 DATABASE_URL=postgresql://...
-CRON_SECRET=your_secret_for_cron_protection
 ```
 
 **Technical Details**:
 - Database client: @vercel/postgres or Supabase client
 - Create `src/lib/database.ts` - DB connection and queries
-- Create `src/lib/sync.ts` - Daily sync logic
-- Configure Vercel Cron in `vercel.json`
+- Create `src/lib/sync.ts` - Sync logic with date flag checking
+- No cron configuration needed (simpler deployment)
 
 **Benefits**:
-- Reduce API calls from 1000s/day to 1/day
-- Faster response times
-- Better rate limit management
-- Lower API costs
-- Foundation for Phase 3 features
+- ✅ Reduce API calls from 1000s/day to 1/day
+- ✅ Faster response times (database queries)
+- ✅ Better rate limit management
+- ✅ Lower API costs
+- ✅ No cron job setup required
+- ✅ Simpler implementation and debugging
+- ✅ Foundation for Phase 3 features
 
-**Estimated Time**: 12-15 hours
+**Estimated Time**: 8-10 hours (reduced from 12-15)
 
 ---
 
@@ -104,8 +126,8 @@ CRON_SECRET=your_secret_for_cron_protection
 | Feature | Complexity | Time Estimate |
 |---------|-----------|---------------|
 | Light/Dark Theme | Low | 3-4 hours |
-| Database + Daily Sync | High | 12-15 hours |
-| **Total** | | **15-19 hours** |
+| Database + Lazy Daily Sync | Medium | 8-10 hours |
+| **Total** | | **11-14 hours** |
 
 ---
 
@@ -172,10 +194,18 @@ Client → Next.js API Routes → newsdata.io API
 
 ### Phase 2
 ```
-Client → Next.js API Routes → PostgreSQL Database
-                ↑
-        Daily Cron Job → newsdata.io API
+Client → Next.js API Routes → Check sync_log for today's date
+                ↓                      ↓
+         Flag exists?           Flag NOT exists?
+                ↓                      ↓
+    Return from PostgreSQL    Fetch from newsdata.io
+                               ↓
+                        Store in PostgreSQL + Set flag
+                               ↓
+                        Return from PostgreSQL
 ```
+
+Simplified: First request of the day triggers the newsdata.io fetch
 
 ### Phase 3
 ```
@@ -195,9 +225,11 @@ Client → Next.js API Routes → PostgreSQL Database
 ### Phase 2
 - [ ] Theme toggle works smoothly in both modes
 - [ ] Theme preference persists across sessions
-- [ ] WCAG AA accessibility maintained
+- [ ] WCAG AA accessibility maintained in both themes
 - [ ] Database stores articles successfully
-- [ ] Daily sync runs automatically
+- [ ] Sync flag mechanism works correctly
+- [ ] First request of the day fetches from newsdata.io
+- [ ] Subsequent requests serve from database only
 - [ ] API calls reduced to 1 per day
 - [ ] Page load time < 1 second (from DB)
 - [ ] Production build succeeds
