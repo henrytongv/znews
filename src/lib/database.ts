@@ -1,6 +1,18 @@
 import { sql } from '@vercel/postgres'
 import { NewsArticle } from '@/types/news'
 
+// Check if database is configured
+if (!process.env.POSTGRES_URL && !process.env.DATABASE_URL) {
+  console.error(
+    '❌ Database not configured! Please set POSTGRES_URL or DATABASE_URL in your .env.local file.\n' +
+    'Get your connection string from:\n' +
+    '- Vercel Postgres: https://vercel.com/docs/storage/vercel-postgres\n' +
+    '- Neon: https://neon.tech\n' +
+    'Then add to .env.local:\n' +
+    'POSTGRES_URL=your_connection_string_here'
+  )
+}
+
 /**
  * Check if articles have been synced today
  */
