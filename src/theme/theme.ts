@@ -1,31 +1,60 @@
 'use client'
 
-import { createTheme } from '@mui/material/styles'
+import { createTheme, PaletteMode } from '@mui/material/styles'
 
-const theme = createTheme({
+export const getTheme = (mode: PaletteMode) => createTheme({
   palette: {
-    mode: 'light',
-    primary: {
-      main: '#1565C0', // Deep blue
-      light: '#1976D2',
-      dark: '#0D47A1',
-      contrastText: '#FFFFFF',
-    },
-    secondary: {
-      main: '#0097A7', // Teal
-      light: '#00ACC1',
-      dark: '#00838F',
-      contrastText: '#FFFFFF',
-    },
-    background: {
-      default: '#F5F7FA', // Cool light gray
-      paper: '#FFFFFF',
-    },
-    text: {
-      primary: '#263238', // Dark blue-gray
-      secondary: '#37474F', // Medium blue-gray
-    },
-    divider: '#ECEFF1',
+    mode,
+    ...(mode === 'light'
+      ? {
+          // Light mode colors (current)
+          primary: {
+            main: '#1565C0', // Deep blue
+            light: '#1976D2',
+            dark: '#0D47A1',
+            contrastText: '#FFFFFF',
+          },
+          secondary: {
+            main: '#0097A7', // Teal
+            light: '#00ACC1',
+            dark: '#00838F',
+            contrastText: '#FFFFFF',
+          },
+          background: {
+            default: '#F5F7FA', // Cool light gray
+            paper: '#FFFFFF',
+          },
+          text: {
+            primary: '#263238', // Dark blue-gray
+            secondary: '#37474F', // Medium blue-gray
+          },
+          divider: '#ECEFF1',
+        }
+      : {
+          // Dark mode colors (cold palette)
+          primary: {
+            main: '#42A5F5', // Lighter blue for dark mode
+            light: '#64B5F6',
+            dark: '#1E88E5',
+            contrastText: '#000000',
+          },
+          secondary: {
+            main: '#26C6DA', // Lighter teal for dark mode
+            light: '#4DD0E1',
+            dark: '#00ACC1',
+            contrastText: '#000000',
+          },
+          background: {
+            default: '#0A1929', // Deep blue-gray
+            paper: '#132F4C', // Slightly lighter blue-gray
+          },
+          text: {
+            primary: '#E3F2FD', // Light blue tint for readability
+            secondary: '#B0BEC5', // Blue-gray for secondary text
+          },
+          divider: '#1E3A52',
+        }
+    ),
   },
   typography: {
     fontFamily: [
@@ -41,32 +70,26 @@ const theme = createTheme({
     h1: {
       fontSize: '2.5rem',
       fontWeight: 600,
-      color: '#263238',
     },
     h2: {
       fontSize: '2rem',
       fontWeight: 600,
-      color: '#263238',
     },
     h3: {
       fontSize: '1.75rem',
       fontWeight: 600,
-      color: '#263238',
     },
     h4: {
       fontSize: '1.5rem',
       fontWeight: 600,
-      color: '#263238',
     },
     h5: {
       fontSize: '1.25rem',
       fontWeight: 600,
-      color: '#263238',
     },
     h6: {
       fontSize: '1rem',
       fontWeight: 600,
-      color: '#263238',
     },
     body1: {
       fontSize: '1rem',
@@ -117,9 +140,6 @@ const theme = createTheme({
         root: {
           cursor: 'pointer',
           transition: 'color 0.2s ease-in-out',
-          '&:hover': {
-            color: '#1976D2',
-          },
         },
       },
     },
@@ -140,4 +160,4 @@ const theme = createTheme({
   },
 })
 
-export default theme
+export default getTheme('light') // Default export for compatibility
